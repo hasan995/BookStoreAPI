@@ -54,6 +54,11 @@ const reviewError = joi.object({
   rating: joi.number().required().min(0).max(5),
 });
 
+const reviewErrorEdit = joi.object({
+  comment: joi.string(),
+  rating: joi.number().required().min(0).max(5),
+});
+
 const verifytoken = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -97,6 +102,15 @@ const ValidateReview = (req, res, next) => {
   }
 };
 
+const ValidateReviewEdit = (req, res, next) => {
+  const { error } = reviewErrorEdit.validate(req.body);
+  if (error) {
+    throw new appError(error.details[0].message);
+  } else {
+    next();
+  }
+};
+
 router.post(
   "/User/Register",
   ValidateUser,
@@ -127,7 +141,9 @@ router.post(
   "/User/Login",
   wrapAsync(async (req, res) => {
     const { username, password } = req.body;
-    const FindUser = await User.findOne({ username });
+    const FindUser = await User.findOne({
+      $or: [{ username: username }, { email: username }],
+    });
     if (!FindUser) {
       throw new appError("invalid credentials");
     } else {
@@ -175,7 +191,7 @@ router.get(
   verifytoken,
   wrapAsync(async (req, res) => {
     const FindUser = await User.findOne({ _id: req.user.id });
-    res.json({ UserInformation: FindUser });
+    res.json({ FindUser });
   })
 );
 
@@ -248,9 +264,13 @@ router.post(
       return res.status(404).json({ message: "Book not found" });
     }
     const user = await User.findOne({ _id: req.user.id });
-    user.Favorites.push(book);
-    await user.save();
-    res.json({ user });
+    if (user.Favorites.some((favoriteBook) => favoriteBook.equals(bookid))) {
+      res.json({ user });
+    } else {
+      user.Favorites.push(book);
+      await user.save();
+      res.json({ user });
+    }
   })
 );
 
@@ -288,9 +308,13 @@ router.post(
       return res.status(404).json({ message: "Book not found" });
     }
     const user = await User.findOne({ _id: req.user.id });
-    user.Bookmarks.push(book);
-    await user.save();
-    res.json({ user });
+    if (user.Bookmarks.some((bookmark) => bookmark.equals(bookid))) {
+      res.json({ user });
+    } else {
+      user.Bookmarks.push(book);
+      await user.save();
+      res.json({ user });
+    }
   })
 );
 
@@ -323,14 +347,15 @@ router.post(
   verifytoken,
   wrapAsync(async (req, res) => {
     const { bookids } = req.body;
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).populate("Books");
     const validBooks = await Book.find({
       _id: {
         $in: bookids,
+        $nin: user.Books,
       },
     });
     if (validBooks.length !== bookids.length) {
-      throw new appError("Some book IDs are invalid");
+      throw new appError("Some book IDs are invalid/Already purchased books");
     }
     user.Books.push(...validBooks);
     await user.save();
@@ -369,7 +394,7 @@ router.post(
     book.reviews.push(newRating);
     await book.save();
     await user.save();
-    res.json({ newRating, book });
+    res.json({ book });
   })
 );
 
@@ -401,11 +426,10 @@ router.delete(
 
 router.put(
   "/User/Reviews/:bookid/",
-  ValidateReview,
+  ValidateReviewEdit,
   verifytoken,
   wrapAsync(async (req, res) => {
     const { bookid } = req.params;
-    const { comment, rating } = req.body;
     const book = await Book.findOne({ _id: bookid }).populate("reviews");
     if (!book) {
       return res.status(404).json({ message: "Book not found" });
@@ -416,12 +440,55 @@ router.put(
     if (!findreview) {
       return res.status(404).json({ message: "Review not found" });
     }
-    const review = await Rating.findById(findreview._id);
-    review.comment = comment;
-    review.rating = rating;
-    await review.save();
+    const updatedReview = await Rating.findOneAndUpdate(
+      { _id: findreview._id },
+      { $set: req.body },
+      { new: true }
+    );
+    const indexToUpdate = book.reviews.findIndex((review) =>
+      review._id.equals(findreview._id)
+    );
+    if (indexToUpdate !== -1) {
+      book.reviews[indexToUpdate] = updatedReview;
+    }
+
     await book.save();
-    res.json({ review, book });
+    res.json({ book });
+  })
+);
+
+router.get(
+  "/User/Recommendations",
+  verifytoken,
+  wrapAsync(async (req, res) => {
+    const user = await User.findById(req.user.id).populate(
+      "Favorites Bookmarks Books"
+    );
+
+    // Category Analysis Logic (Updated)
+    const categoryCounts = {};
+    for (const book of [...user.Favorites, ...user.Bookmarks, ...user.Books]) {
+      if (categoryCounts[book.category]) {
+        categoryCounts[book.category]++;
+      } else {
+        categoryCounts[book.category] = 1;
+      }
+    }
+
+    let mostInterestingCategory = null;
+    let maxCount = 0;
+    for (const category in categoryCounts) {
+      if (categoryCounts[category] > maxCount) {
+        mostInterestingCategory = category;
+        maxCount = categoryCounts[category];
+      }
+    }
+    const bookIds = user.Books.map((book) => book._id);
+    const books = await Book.find({
+      category: mostInterestingCategory,
+      _id: { $nin: bookIds },
+    });
+    res.json({ books });
   })
 );
 

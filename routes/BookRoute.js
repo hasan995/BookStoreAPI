@@ -61,7 +61,13 @@ router.get(
   "/Books/:bookid",
   wrapAsync(async (req, res) => {
     const { bookid } = req.params;
-    const book = await Book.findOne({ _id: bookid }).populate("reviews");
+    const book = await Book.findOne({ _id: bookid }).populate({
+      path: "reviews",
+      populate: {
+        path: "user",
+        select: "firstname lastname image createdAt",
+      },
+    });
     if (!book) {
       return res.status(404).json({ message: "Book not found" });
     }
@@ -109,7 +115,7 @@ router.get(
       });
     }
 
-    res.json(books);
+    res.json({ books });
   })
 );
 

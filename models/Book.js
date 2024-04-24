@@ -44,6 +44,16 @@ const bookSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  averageRating: { type: Number, default: 0 },
+});
+
+bookSchema.pre("save", async function (next) {
+  const totalRating = this.reviews.reduce(
+    (sum, review) => sum + review.rating,
+    0
+  );
+  this.averageRating = (totalRating / this.reviews.length).toFixed(1);
+  next();
 });
 
 const Book = mongoose.model("Book", bookSchema);
