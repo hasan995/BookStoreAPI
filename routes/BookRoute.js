@@ -58,6 +58,38 @@ router.get(
 );
 
 router.get(
+  "/Books/topseller",
+  wrapAsync(async (req, res) => {
+    const book = await Book.find({ topseller: true });
+    res.json({ book });
+  })
+);
+
+router.get(
+  "/Books/upcoming",
+  wrapAsync(async (req, res) => {
+    const book = await Book.find({ upcoming: true });
+    res.json({ book });
+  })
+);
+
+router.get(
+  "/Books/onsale",
+  wrapAsync(async (req, res) => {
+    const book = await Book.find({ onsale: true });
+    res.json({ book });
+  })
+);
+
+router.get(
+  "/Books/newarrival",
+  wrapAsync(async (req, res) => {
+    const book = await Book.find({ newarrival: true });
+    res.json({ book });
+  })
+);
+
+router.get(
   "/Books/:bookid",
   wrapAsync(async (req, res) => {
     const { bookid } = req.params;
@@ -131,37 +163,5 @@ router.get(
 //     res.json({ Reviews });
 //   })
 // );
-
-router.get(
-  "/Books/topseller",
-  wrapAsync(async (req, res) => {
-    const book = await Book.find({ topseller: true });
-    res.json({ book });
-  })
-);
-
-router.get(
-  "/Books/upcoming",
-  wrapAsync(async (req, res) => {
-    const book = await Book.find({ upcoming: true });
-    res.json({ book });
-  })
-);
-
-router.get(
-  "/Books/onsale",
-  wrapAsync(async (req, res) => {
-    const book = await Book.find({ onsale: true });
-    res.json({ book });
-  })
-);
-
-router.get(
-  "/Books/newarrival",
-  wrapAsync(async (req, res) => {
-    const book = await Book.find({ newarrival: true });
-    res.json({ book });
-  })
-);
 
 module.exports = router;
