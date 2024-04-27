@@ -22,6 +22,7 @@ router.get(
     const onsaleFilter = req.query.onsale === "true";
 
     let books = await Book.find({
+      upcoming: false,
       $or: [
         { title: { $regex: query, $options: "i" } },
         { author: { $regex: query, $options: "i" } },
@@ -115,8 +116,11 @@ router.get(
     const topsellerFilter = req.query.topseller === "true";
     const onsaleFilter = req.query.onsale === "true";
 
+    const capitalizedCategory =
+      category.charAt(0).toUpperCase() + category.slice(1);
     let books = await Book.find({
-      category: { $regex: category, $options: "i" },
+      category: capitalizedCategory,
+      upcoming: false,
       $or: [
         { title: { $regex: query, $options: "i" } },
         { author: { $regex: query, $options: "i" } },
