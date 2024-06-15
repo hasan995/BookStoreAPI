@@ -153,7 +153,7 @@ router.post(
           { id: FindUser._id, role: "user" },
           process.env.JWTsecret,
           {
-            expiresIn: "2h",
+            expiresIn: "30d",
           }
         );
         res.json({ UserInformation: FindUser, token: token });
@@ -176,7 +176,7 @@ router.put(
       { new: true }
     );
     if (req.file) {
-      if (FindUser.image.name !== "")
+      if (FindUser.image.name)
         await cloudinary.uploader.destroy(FindUser.image.name);
       FindUser.image.name = req.file.filename;
       FindUser.image.url = req.file.path;
@@ -357,6 +357,28 @@ router.post(
     if (validBooks.length !== bookids.length) {
       throw new appError("Some book IDs are invalid/Already purchased books");
     }
+    user.Books.push(...validBooks);
+    await user.save();
+    res.json({ user });
+  })
+);
+
+router.post(
+  "/User/Books1",
+  verifytoken,
+  wrapAsync(async (req, res) => {
+    const user = await User.findById(req.user.id).populate("Books");
+    const bookids = user.Bookmarks;
+    const validBooks = await Book.find({
+      _id: {
+        $in: bookids,
+        $nin: user.Books,
+      },
+    });
+    if (validBooks.length !== bookids.length) {
+      throw new appError("Some book IDs are invalid/Already purchased books");
+    }
+    user.Bookmarks = [];
     user.Books.push(...validBooks);
     await user.save();
     res.json({ user });
