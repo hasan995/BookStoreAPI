@@ -131,6 +131,8 @@ router.post(
         password: hash,
         isAdmin: false,
       });
+      newUser.image.url =
+        "https://res.cloudinary.com/ddtp8tqvv/image/upload/v1719154689/Users/vywcodnzuyauao7g0ek4.png";
       await newUser.save();
       res.send(newUser);
     }
