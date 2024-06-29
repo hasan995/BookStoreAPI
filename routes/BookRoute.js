@@ -44,13 +44,9 @@ router.get(
       const sortOrder = req.query.sort.startsWith("-") ? -1 : 1;
 
       books.sort((bookA, bookB) => {
-        if (bookA[sortField] < bookB[sortField]) {
-          return sortOrder * -1;
-        } else if (bookA[sortField] > bookB[sortField]) {
-          return sortOrder * 1;
-        } else {
-          return 0;
-        }
+        const salePriceA = bookA.onsale ? bookA.saleprice : bookA.price;
+        const salePriceB = bookB.onsale ? bookB.saleprice : bookB.price;
+        return sortOrder * (salePriceA - salePriceB);
       });
     }
 
@@ -141,13 +137,9 @@ router.get(
       const sortOrder = req.query.sort.startsWith("-") ? -1 : 1;
 
       books.sort((bookA, bookB) => {
-        if (bookA[sortField] < bookB[sortField]) {
-          return sortOrder * -1;
-        } else if (bookA[sortField] > bookB[sortField]) {
-          return sortOrder * 1;
-        } else {
-          return 0;
-        }
+        const salePriceA = bookA.onsale ? bookA.saleprice : bookA.price;
+        const salePriceB = bookB.onsale ? bookB.saleprice : bookB.price;
+        return sortOrder * (salePriceA - salePriceB);
       });
     }
 
