@@ -44,9 +44,16 @@ router.get(
       const sortOrder = req.query.sort.startsWith("-") ? -1 : 1;
 
       books.sort((bookA, bookB) => {
-        const salePriceA = bookA.onsale ? bookA.saleprice : bookA.price;
-        const salePriceB = bookB.onsale ? bookB.saleprice : bookB.price;
-        return sortOrder * (salePriceA - salePriceB);
+        if (sortField === "publishDate") {
+          return (
+            sortOrder *
+            (new Date(bookB.publishDate) - new Date(bookA.publishDate))
+          );
+        } else {
+          const salePriceA = bookA.onsale ? bookA.saleprice : bookA.price;
+          const salePriceB = bookB.onsale ? bookB.saleprice : bookB.price;
+          return sortOrder * (salePriceA - salePriceB);
+        }
       });
     }
 
@@ -137,9 +144,16 @@ router.get(
       const sortOrder = req.query.sort.startsWith("-") ? -1 : 1;
 
       books.sort((bookA, bookB) => {
-        const salePriceA = bookA.onsale ? bookA.saleprice : bookA.price;
-        const salePriceB = bookB.onsale ? bookB.saleprice : bookB.price;
-        return sortOrder * (salePriceA - salePriceB);
+        if (sortField === "publishDate") {
+          return (
+            sortOrder *
+            (new Date(bookB.publishDate) - new Date(bookA.publishDate))
+          );
+        } else {
+          const salePriceA = bookA.onsale ? bookA.saleprice : bookA.price;
+          const salePriceB = bookB.onsale ? bookB.saleprice : bookB.price;
+          return sortOrder * (salePriceA - salePriceB);
+        }
       });
     }
 
